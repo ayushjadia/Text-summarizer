@@ -4,11 +4,15 @@ from dotenv import load_dotenv
 from common.embedder import embeddings, index_embeddings
 from common.prompt import prompt
 from llm_app import chunk_texts, extract_texts
+
 load_dotenv()
 
 dropbox_folder_path = os.environ.get("DROPBOX_LOCAL_FOLDER_PATH", "/usr/local/documents")
 
-def run(host, port):
+def main(host, port):
+    class QueryInputSchema(pw.Schema):
+        query: str
+
     # Given a user search query
     query, response_writer = pw.io.http.rest_connector(
         host=host,
@@ -39,15 +43,16 @@ def run(host, port):
     # Generate embeddings for the query from the OpenAI Embeddings API
     embedded_query = embeddings(context=query, data_to_embed=pw.this.query)
 
-    # Build prompt using indexed data
+    # Build a prompt using indexed data
     responses = prompt(index, embedded_query, pw.this.query)
 
     # Feed the prompt to ChatGPT and obtain the generated answer.
     response_writer(responses)
 
-    # Run the pipeline
+    # Run the Pathway pipeline
     pw.run()
 
-
-class QueryInputSchema(pw.Schema):
-    query: str
+if __name__ == "__main__":
+    host = "your_host"
+    port = "your_port"
+    main(host, port)
